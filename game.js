@@ -1,8 +1,10 @@
 export class Ship {
   timesHit = 0;
   isUnderWater = false;
-  constructor(length) {
+  coordinates = [];
+  constructor(length, isHorizontal = true) {
     this.length = length;
+    this.isHorizontal = isHorizontal;
   }
   hit() {
     this.timesHit = this.timesHit + 1;
@@ -12,6 +14,7 @@ export class Ship {
   }
 }
 export class Gameboard {
+  ships = [];
   constructor(size = 10) {
     this.size = size;
     this.board = this.initializeBoard(this.size);
@@ -38,5 +41,40 @@ export class Gameboard {
         board[i][j] = null;
       }
     }
+  }
+  checkPlacementValidity(row, col, board) {
+    if (row >= board.length) {
+      return false;
+    }
+    board.forEach((row) => {
+      if (col >= row.length) {
+        return false;
+      }
+    });
+    if (board[row][col] !== null) {
+      return false;
+    }
+    return true;
+  }
+  placeShip(row, col, ship, board) {
+    let coordinate = [row, col];
+    for (let i = 0; i < ship.length; i++) {
+      if (!this.checkPlacementValidity(coordinate[0], coordinate[1], board)) {
+        throw new Error("The ship is out of bounds");
+      }
+      ship.isHorizontal
+        ? (coordinate[1] = coordinate[1] + 1)
+        : (coordinate[0] = coordinate[0] + 1);
+    }
+    coordinate = [row, col];
+    for (let i = 0; i < ship.length; i++) {
+      board[coordinate[0]][coordinate[1]] = `${ship.length}`;
+      ship.coordinates.push(coordinate);
+      ship.isHorizontal
+        ? (coordinate[1] = coordinate[1] + 1)
+        : (coordinate[0] = coordinate[0] + 1);
+    }
+    this.ships.push(ship);
+    return board; //returns board for testing purposes. Refactor after testing
   }
 }
