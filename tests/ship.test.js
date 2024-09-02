@@ -1,4 +1,4 @@
-import { Ship } from "./game.js";
+import { Ship } from "../game.js";
 
 let ship;
 beforeEach(() => {
