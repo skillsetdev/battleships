@@ -16,6 +16,7 @@ export class Ship {
 export class Gameboard {
   ships = [];
   sunkShips = [];
+  missedShots = [];
   constructor(size = 10) {
     this.size = size;
     this.board = this.initializeBoard(this.size);
@@ -99,3 +100,47 @@ export class Gameboard {
     });
   }
 }
+export class Player {
+  constructor() {
+    this.gameBoard = new Gameboard();
+  }
+  initializeGame(orientationCallback) {
+    for (i = 2; i <= 6; i++) {
+      const orientation = orientationCallback();
+      let newShip = new Ship(i, orientation);
+      const position = positionCallback();
+      const row = position[0];
+      const col = position[1];
+      this.gameBoard = this.gameBoard.placeShip(row, col, newShip, gameBoard);
+    }
+  }
+  // UI
+  displayShips() {
+    const table = document.querySelector("#board");
+    this.gameBoard.board.forEach((value, i, gameBoard) => {
+      gameBoard[i].forEach((value, j) => {
+        let cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = `${i},${j}`;
+        table.appendChild(cell);
+      });
+    });
+    if (
+      this.gameBoard.ships.length === 0 &&
+      this.gameBoard.sunkShips.length === 0
+    ) {
+      return;
+    }
+    if (
+      this.gameBoard.ships.length === 0 &&
+      this.gameBoard.sunkShips.length !== 0
+    ) {
+      // all ships are sunk
+    }
+    if (this.gameBoard.ships.length !== 0) {
+      // display ships and sunk ships
+    }
+  }
+}
+let player = new Player();
+player.displayShips();
