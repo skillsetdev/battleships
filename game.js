@@ -58,6 +58,45 @@ export class Gameboard {
     }
     return true;
   }
+  getFullShipCoordinates(row, col, gameBoard, shipToCheck) {
+    let coordinate = [row, col];
+    let shipCoordinates = [];
+    for (let i = 0; i < shipToCheck.length; i++) {
+      if (
+        !this.checkPlacementValidity(
+          coordinate[0],
+          coordinate[1],
+          gameBoard.board
+        )
+      ) {
+        return [];
+      }
+      shipCoordinates.push([...coordinate]);
+      shipToCheck.isHorizontal
+        ? (coordinate[1] = coordinate[1] + 1)
+        : (coordinate[0] = coordinate[0] + 1);
+    }
+    return shipCoordinates;
+  }
+  checkFullShipPlacementValidity(row, col, gameBoard, shipToCheck) {
+    let coordinate = [row, col];
+    for (let i = 0; i < shipToCheck.length; i++) {
+      if (
+        !this.checkPlacementValidity(
+          coordinate[0],
+          coordinate[1],
+          gameBoard.board
+        )
+      ) {
+        console.log(`invalid on location: ${JSON.stringify(coordinate)}`);
+        return false;
+      }
+      shipToCheck.isHorizontal
+        ? (coordinate[1] = coordinate[1] + 1)
+        : (coordinate[0] = coordinate[0] + 1);
+    }
+    return true;
+  }
   placeShip(row, col, ship, board) {
     let coordinate = [row, col];
     for (let i = 0; i < ship.length; i++) {
@@ -104,11 +143,14 @@ export class Player {
   constructor() {
     this.gameBoard = new Gameboard();
   }
-  initializeGame(orientationCallback) {
-    for (i = 2; i <= 6; i++) {
-      const orientation = orientationCallback();
+  initializeGame() {
+    for (let i = 2; i <= 6; i++) {
+      const orientation = true; //add orientation callback
+
       let newShip = new Ship(i, orientation);
-      const position = positionCallback();
+
+      console.log(newShip.length);
+      const position = this.requireShipLocation(newShip);
       const row = position[0];
       const col = position[1];
       this.gameBoard = this.gameBoard.placeShip(row, col, newShip, gameBoard);
@@ -141,6 +183,86 @@ export class Player {
       // display ships and sunk ships
     }
   }
+  requireShipLocation(shipToPlace) {
+    const table = document.querySelector("#board");
+    table.addEventListener("mouseover", (e) => {
+      this.handleMouseOver(e, shipToPlace);
+    });
+    table.addEventListener("mouseout", (e) => {
+      this.handleMouseOut(e);
+    });
+    table.addEventListener("click", (e) => {
+      this.handleClick(e, shipToPlace);
+    });
+  }
+  handleMouseOver(event, ship) {
+    if (event.target.tagName === "DIV") {
+      const hoveredCellLocation = event.target.id.split(",");
+      let hoveredCellLocationInt = [];
+      hoveredCellLocation.forEach((item) => {
+        const intItem = parseInt(item);
+        hoveredCellLocationInt.push(intItem);
+      });
+      if (
+        this.gameBoard.checkFullShipPlacementValidity(
+          hoveredCellLocationInt[0],
+          hoveredCellLocationInt[1],
+          this.gameBoard,
+          ship
+        )
+      ) {
+        event.target.style.backgroundColor = "green";
+        let coordinates = this.gameBoard.getFullShipCoordinates(
+          hoveredCellLocationInt[0],
+          hoveredCellLocationInt[1],
+          this.gameBoard,
+          ship
+        );
+        console.log(ship.length);
+        console.log(coordinates);
+        coordinates.forEach((coordinate) => {
+          const cellCoordinates = `${coordinate[0]},${coordinate[1]}`;
+          let cell = document.getElementById(cellCoordinates);
+          cell.style.backgroundColor = "green";
+        });
+      } else {
+        event.target.style.backgroundColor = "red";
+      }
+    }
+  }
+  handleMouseOut(event) {
+    const table = document.querySelector("#board");
+    let cells = [...table.querySelectorAll("div")];
+    cells.forEach((cell) => {
+      cell.style.backgroundColor = "transparent";
+    });
+    ///////////////////////////////////////////////
+    // then rebuild all the existing ships!!!
+    ///////////////////////////////////////////////
+  }
+  handleClick(event, ship) {
+    if (event.target.tagName === "DIV") {
+      const clickedCellLocation = event.target.id.split(",");
+      let clickedCellLocationInt = [];
+      clickedCellLocation.forEach((item) => {
+        const intItem = parseInt(item);
+        clickedCellLocationInt.push(intItem);
+      });
+      if (
+        this.gameBoard.checkFullShipPlacementValidity(
+          clickedCellLocationInt[0],
+          clickedCellLocationInt[1],
+          this.gameBoard,
+          ship
+        )
+      ) {
+        return clickedCellLocationInt;
+      } else {
+        throw new Error("Cannot Place YOUR SHIP HERE!!!");
+      }
+    }
+  }
 }
 let player = new Player();
 player.displayShips();
+player.initializeGame();

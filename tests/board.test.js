@@ -71,3 +71,12 @@ test("places a verticl ship correctly", () => {
   gameboard.receiveAttack(1, 1, hitMockFn, missMockFn, sunkMockFn);
   gameboard.receiveAttack(0, 1, hitMockFn, missMockFn, sunkMockFn);
 });
+test("checks ships's full length location", () => {
+  let board = [
+    [null, null, null],
+    [null, null, null],
+    [null, null, null],
+  ];
+  let ship = new Ship(2, true);
+  expect(gameboard.checkFullShipPlacement(1, 1, board, ship).toBeTruthy);
+});
