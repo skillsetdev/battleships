@@ -140,9 +140,12 @@ export class Gameboard {
   }
 }
 export class Player {
+  shipsToPlace = null;
+  selectedShip = null;
   constructor() {
     this.gameBoard = new Gameboard();
   }
+  startGame() {} //activated when all the ships are placed
   initializeGame() {
     for (let i = 2; i <= 6; i++) {
       const orientation = true; //add orientation callback
@@ -156,8 +159,75 @@ export class Player {
       this.gameBoard = this.gameBoard.placeShip(row, col, newShip, gameBoard);
     }
   }
+  generateArsenal() {
+    const arsenalBox = document.querySelector("#arsenal");
+    let arsenalImages = [
+      "assets/Subject 1.png",
+      "assets/Subject.png",
+      "assets/Subject 4.png",
+      "assets/Subject 5.png",
+      "assets/Subject 3.png",
+    ];
+    if (this.shipsToPlace === null) {
+      this.shipsToPlace = [];
+      arsenalImages.forEach((link, i) => {
+        let imageBox = document.createElement("img");
+        imageBox.id = `${i + 2}-h`;
+        imageBox.src = `${arsenalImages[i]}`;
+        imageBox.style.backgroundRepeat = "no-repeat";
+        imageBox.style.backgroundSize = "100% 100%";
+        imageBox.style.height = "70px";
+        imageBox.style.maxWidth = "280px";
+        imageBox.style.width = "auto";
+        imageBox.addEventListener("dblclick", (e) => {
+          this.turnShip(e);
+        });
+        arsenalBox.appendChild(imageBox);
+        let ship = new Ship(i + 2, true);
+        this.shipsToPlace.push(ship);
+      });
+      console.log(this.shipsToPlace);
+    } else {
+      arsenalBox.innerHTML = "";
+      this.shipsToPlace.forEach((ship, i) => {
+        let imageBox = document.createElement("img");
+        if (ship.isHorizontal) {
+          imageBox.id = `${ship.length}-h`;
+          imageBox.style.height = "70px";
+          imageBox.style.maxWidth = "280px";
+          imageBox.style.width = "auto";
+        } else {
+          imageBox.id = `${ship.length}-v`;
+          imageBox.style.height = "70px";
+          imageBox.style.maxWidth = "280px";
+          imageBox.style.width = "auto";
+          imageBox.style.transform = "rotate(90deg)";
+        }
+        imageBox.addEventListener("dblclick", (e) => {
+          this.turnShip(e);
+        });
+        imageBox.src = `${arsenalImages[ship.length - 2]}`;
+        imageBox.style.backgroundRepeat = "no-repeat";
+        imageBox.style.backgroundSize = "100% 100%";
+        arsenalBox.appendChild(imageBox);
+      });
+    }
+  }
+  turnShip(event) {
+    const idSplit = event.target.id.split("-");
+    this.shipsToPlace.forEach((ship) => {
+      if (ship.length == idSplit[0]) {
+        if (idSplit[1] == "h") {
+          ship.isHorizontal = false;
+        } else {
+          ship.isHorizontal = true;
+        }
+      }
+    });
+    this.generateArsenal();
+  }
   // UI
-  displayShips() {
+  displayBoardUI() {
     const table = document.querySelector("#board");
     this.gameBoard.board.forEach((value, i, gameBoard) => {
       gameBoard[i].forEach((value, j) => {
@@ -211,15 +281,12 @@ export class Player {
           ship
         )
       ) {
-        event.target.style.backgroundColor = "green";
         let coordinates = this.gameBoard.getFullShipCoordinates(
           hoveredCellLocationInt[0],
           hoveredCellLocationInt[1],
           this.gameBoard,
           ship
         );
-        console.log(ship.length);
-        console.log(coordinates);
         coordinates.forEach((coordinate) => {
           const cellCoordinates = `${coordinate[0]},${coordinate[1]}`;
           let cell = document.getElementById(cellCoordinates);
@@ -264,5 +331,6 @@ export class Player {
   }
 }
 let player = new Player();
-player.displayShips();
+player.displayBoardUI();
+player.generateArsenal();
 player.initializeGame();

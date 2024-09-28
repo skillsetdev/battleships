@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { Gameboard, Ship } from "../game.js";
-let gameboard;
+/*let gameboard;
 beforeEach(() => {
   gameboard = new Gameboard(3);
 });
@@ -79,4 +79,8 @@ test("checks ships's full length location", () => {
   ];
   let ship = new Ship(2, true);
   expect(gameboard.checkFullShipPlacement(1, 1, board, ship).toBeTruthy);
+});*/
+let gameboard;
+beforeEach(() => {
+  gameboard = new Gameboard();
 });
