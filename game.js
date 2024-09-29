@@ -146,7 +146,7 @@ export class Player {
     this.gameBoard = new Gameboard();
   }
   startGame() {} //activated when all the ships are placed
-  initializeGame() {
+  /*initializeGame() {
     for (let i = 2; i <= 6; i++) {
       const orientation = true; //add orientation callback
 
@@ -158,7 +158,7 @@ export class Player {
       const col = position[1];
       this.gameBoard = this.gameBoard.placeShip(row, col, newShip, gameBoard);
     }
-  }
+  }*/
   generateArsenal() {
     const arsenalBox = document.querySelector("#arsenal");
     let arsenalImages = [
@@ -171,6 +171,11 @@ export class Player {
     if (this.shipsToPlace === null) {
       this.shipsToPlace = [];
       arsenalImages.forEach((link, i) => {
+        let shipBox = document.createElement("div");
+        shipBox.className = "ship-box";
+        let turnIcon = document.createElement("img");
+        turnIcon.src =
+          "./assets/rotate_right_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg";
         let imageBox = document.createElement("img");
         imageBox.id = `${i + 2}-h`;
         imageBox.src = `${arsenalImages[i]}`;
@@ -179,17 +184,26 @@ export class Player {
         imageBox.style.height = "70px";
         imageBox.style.maxWidth = "280px";
         imageBox.style.width = "auto";
-        imageBox.addEventListener("dblclick", (e) => {
+        imageBox.addEventListener("click", (e) => {
+          this.selectShip(e);
+        });
+        turnIcon.addEventListener("click", (e) => {
           this.turnShip(e);
         });
-        arsenalBox.appendChild(imageBox);
+        shipBox.appendChild(imageBox);
+        shipBox.appendChild(turnIcon);
+        arsenalBox.appendChild(shipBox);
         let ship = new Ship(i + 2, true);
         this.shipsToPlace.push(ship);
       });
-      console.log(this.shipsToPlace);
     } else {
       arsenalBox.innerHTML = "";
       this.shipsToPlace.forEach((ship, i) => {
+        let shipBox = document.createElement("div");
+        shipBox.className = "ship-box";
+        let turnIcon = document.createElement("img");
+        turnIcon.src =
+          "./assets/rotate_right_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg";
         let imageBox = document.createElement("img");
         if (ship.isHorizontal) {
           imageBox.id = `${ship.length}-h`;
@@ -198,23 +212,53 @@ export class Player {
           imageBox.style.width = "auto";
         } else {
           imageBox.id = `${ship.length}-v`;
+          shipBox.style.width = "auto";
+          shipBox.style.height = `${ship.length * 70}px`;
           imageBox.style.height = "70px";
           imageBox.style.maxWidth = "280px";
           imageBox.style.width = "auto";
           imageBox.style.transform = "rotate(90deg)";
         }
-        imageBox.addEventListener("dblclick", (e) => {
+        imageBox.addEventListener("click", (e) => {
+          this.selectShip(e);
+        });
+        turnIcon.addEventListener("click", (e) => {
           this.turnShip(e);
         });
         imageBox.src = `${arsenalImages[ship.length - 2]}`;
         imageBox.style.backgroundRepeat = "no-repeat";
         imageBox.style.backgroundSize = "100% 100%";
-        arsenalBox.appendChild(imageBox);
+        if (this.selectedShip.length == ship.length) {
+          shipBox.style.border = "3px solid green";
+        }
+        shipBox.appendChild(imageBox);
+        shipBox.appendChild(turnIcon);
+        arsenalBox.appendChild(shipBox);
       });
     }
   }
+  selectShip(event) {
+    const arsenalBox = document.querySelector("#arsenal");
+    if (this.selectedShip !== null) {
+      const shipBoxes = document.querySelectorAll(".ship-box");
+      shipBoxes.forEach((shipBox) => {
+        shipBox.style.border = "1px solid black";
+      });
+    }
+    const targetID = event.target.id.split("-");
+    const targetLength = targetID[0];
+    this.shipsToPlace.forEach((ship) => {
+      if (ship.length == targetLength) {
+        this.selectedShip = ship;
+        console.log(this.selectedShip);
+      }
+    });
+    event.target.parentElement.style.border = "3px solid green";
+    this.requireShipLocation(this.selectedShip);
+  }
   turnShip(event) {
-    const idSplit = event.target.id.split("-");
+    const shipIcon = event.target.parentElement.firstChild;
+    const idSplit = shipIcon.id.split("-");
     this.shipsToPlace.forEach((ship) => {
       if (ship.length == idSplit[0]) {
         if (idSplit[1] == "h") {
@@ -255,13 +299,19 @@ export class Player {
   }
   requireShipLocation(shipToPlace) {
     const table = document.querySelector("#board");
-    table.addEventListener("mouseover", (e) => {
+    ////////////////////////////////////////////////////
+    // Remove all event listeners by cloning the element
+    ////////////////////////////////////////////////////
+    const newTable = table.cloneNode(true);
+    table.parentNode.replaceChild(newTable, table);
+
+    newTable.addEventListener("mouseover", (e) => {
       this.handleMouseOver(e, shipToPlace);
     });
-    table.addEventListener("mouseout", (e) => {
+    newTable.addEventListener("mouseout", (e) => {
       this.handleMouseOut(e);
     });
-    table.addEventListener("click", (e) => {
+    newTable.addEventListener("click", (e) => {
       this.handleClick(e, shipToPlace);
     });
   }
@@ -333,4 +383,3 @@ export class Player {
 let player = new Player();
 player.displayBoardUI();
 player.generateArsenal();
-player.initializeGame();
