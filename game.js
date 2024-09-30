@@ -48,12 +48,29 @@ export class Gameboard {
     if (row >= board.length) {
       return false;
     }
-    board.forEach((row) => {
-      if (col >= row.length) {
-        return false;
-      }
-    });
-    if (board[row][col] !== null) {
+    if (col >= board[row].length) {
+      return false;
+    }
+    const boardSize = board.length;
+    const isCellOccupied = (r, c) => {
+      return (
+        r >= 0 &&
+        r < boardSize &&
+        c >= 0 &&
+        c < board[row].length &&
+        board[r][c] !== null
+      );
+    };
+    if (
+      isCellOccupied(row + 1, col) || // Down
+      isCellOccupied(row - 1, col) || // Up
+      isCellOccupied(row, col + 1) || // Right
+      isCellOccupied(row, col - 1) || // Left
+      isCellOccupied(row + 1, col + 1) || // Down-Right
+      isCellOccupied(row + 1, col - 1) || // Down-Left
+      isCellOccupied(row - 1, col + 1) || // Up-Right
+      isCellOccupied(row - 1, col - 1) // Up-Left
+    ) {
       return false;
     }
     return true;
@@ -88,7 +105,6 @@ export class Gameboard {
           gameBoard.board
         )
       ) {
-        console.log(`invalid on location: ${JSON.stringify(coordinate)}`);
         return false;
       }
       shipToCheck.isHorizontal
@@ -175,7 +191,7 @@ export class Player {
         shipBox.className = "ship-box";
         let turnIcon = document.createElement("img");
         turnIcon.src =
-          "./assets/rotate_right_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg";
+          "./assets/rotate_left_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
         let imageBox = document.createElement("img");
         imageBox.id = `${i + 2}-h`;
         imageBox.src = `${arsenalImages[i]}`;
@@ -217,7 +233,7 @@ export class Player {
           imageBox.style.height = "70px";
           imageBox.style.maxWidth = "280px";
           imageBox.style.width = "auto";
-          imageBox.style.transform = "rotate(90deg)";
+          imageBox.style.transform = "rotate(270deg)";
         }
         imageBox.addEventListener("click", (e) => {
           this.selectShip(e);
@@ -289,9 +305,23 @@ export class Player {
               cell.style.borderTopLeftRadius = "50% 100%";
               cell.style.borderTopRightRadius = "50% 100%";
             }
+            if (
+              ship.coordinates[ship.length - 1] == `${i},${j}` &&
+              !ship.isHorizontal
+            ) {
+              cell.style.borderBottomLeftRadius = "25%";
+              cell.style.borderBottomRightRadius = "25%";
+            }
             if (ship.coordinates[0] == `${i},${j}` && ship.isHorizontal) {
-              cell.style.borderTopLeftRadius = "100% 50%";
-              cell.style.borderBottomLeftRadius = "100% 50%";
+              cell.style.borderTopLeftRadius = "25%";
+              cell.style.borderBottomLeftRadius = "25%";
+            }
+            if (
+              ship.coordinates[ship.length - 1] == `${i},${j}` &&
+              ship.isHorizontal
+            ) {
+              cell.style.borderTopRightRadius = "100% 50%";
+              cell.style.borderBottomRightRadius = "100% 50%";
             }
           }
         });
