@@ -110,7 +110,7 @@ export class Gameboard {
     coordinate = [row, col];
     for (let i = 0; i < ship.length; i++) {
       board[coordinate[0]][coordinate[1]] = `${ship.length}`;
-      ship.coordinates.push([...coordinate]);
+      ship.coordinates.push(`${coordinate[0]},${coordinate[1]}`);
       ship.isHorizontal
         ? (coordinate[1] = coordinate[1] + 1)
         : (coordinate[0] = coordinate[0] + 1);
@@ -273,12 +273,18 @@ export class Player {
   // UI
   displayBoardUI() {
     const table = document.querySelector("#board");
+    table.innerHTML = "";
     this.gameBoard.board.forEach((value, i, gameBoard) => {
       gameBoard[i].forEach((value, j) => {
         let cell = document.createElement("div");
         cell.className = "cell";
         cell.id = `${i},${j}`;
         table.appendChild(cell);
+        this.gameBoard.ships.forEach((ship) => {
+          if (ship.coordinates.includes(`${i},${j}`)) {
+            cell.style.backgroundColor = "white";
+          }
+        });
       });
     });
     if (
@@ -353,9 +359,7 @@ export class Player {
     cells.forEach((cell) => {
       cell.style.backgroundColor = "transparent";
     });
-    ///////////////////////////////////////////////
-    // then rebuild all the existing ships!!!
-    ///////////////////////////////////////////////
+    this.displayBoardUI();
   }
   handleClick(event, ship) {
     if (event.target.tagName === "DIV") {
@@ -373,7 +377,19 @@ export class Player {
           ship
         )
       ) {
-        return clickedCellLocationInt;
+        this.shipsToPlace.forEach((ship, i, toPlaceArray) => {
+          if (ship.length == this.selectedShip.length) {
+            this.gameBoard.placeShip(
+              clickedCellLocationInt[0],
+              clickedCellLocationInt[1],
+              this.selectedShip,
+              this.gameBoard.board
+            );
+            toPlaceArray.splice(i, 1);
+            this.generateArsenal();
+          }
+          this.displayBoardUI();
+        });
       } else {
         throw new Error("Cannot Place YOUR SHIP HERE!!!");
       }
