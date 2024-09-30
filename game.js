@@ -228,8 +228,10 @@ export class Player {
         imageBox.src = `${arsenalImages[ship.length - 2]}`;
         imageBox.style.backgroundRepeat = "no-repeat";
         imageBox.style.backgroundSize = "100% 100%";
-        if (this.selectedShip.length == ship.length) {
-          shipBox.style.border = "3px solid green";
+        if (this.selectedShip !== null) {
+          if (this.selectedShip.length == ship.length) {
+            shipBox.style.border = "3px solid green";
+          }
         }
         shipBox.appendChild(imageBox);
         shipBox.appendChild(turnIcon);
@@ -282,7 +284,15 @@ export class Player {
         table.appendChild(cell);
         this.gameBoard.ships.forEach((ship) => {
           if (ship.coordinates.includes(`${i},${j}`)) {
-            cell.style.backgroundColor = "white";
+            cell.style.backgroundColor = "rgb(66, 111, 113)";
+            if (ship.coordinates[0] == `${i},${j}` && !ship.isHorizontal) {
+              cell.style.borderTopLeftRadius = "50% 100%";
+              cell.style.borderTopRightRadius = "50% 100%";
+            }
+            if (ship.coordinates[0] == `${i},${j}` && ship.isHorizontal) {
+              cell.style.borderTopLeftRadius = "100% 50%";
+              cell.style.borderBottomLeftRadius = "100% 50%";
+            }
           }
         });
       });
@@ -303,11 +313,15 @@ export class Player {
       // display ships and sunk ships
     }
   }
+  cancelLocationRequest() {
+    const table = document.querySelector("#board");
+    const newTable = table.cloneNode(true);
+    table.parentNode.replaceChild(newTable, table);
+    // Remove all event listeners by cloning the element
+  }
   requireShipLocation(shipToPlace) {
     const table = document.querySelector("#board");
-    ////////////////////////////////////////////////////
     // Remove all event listeners by cloning the element
-    ////////////////////////////////////////////////////
     const newTable = table.cloneNode(true);
     table.parentNode.replaceChild(newTable, table);
 
@@ -377,19 +391,24 @@ export class Player {
           ship
         )
       ) {
-        this.shipsToPlace.forEach((ship, i, toPlaceArray) => {
-          if (ship.length == this.selectedShip.length) {
-            this.gameBoard.placeShip(
-              clickedCellLocationInt[0],
-              clickedCellLocationInt[1],
-              this.selectedShip,
-              this.gameBoard.board
-            );
-            toPlaceArray.splice(i, 1);
-            this.generateArsenal();
-          }
-          this.displayBoardUI();
-        });
+        if (this.shipsToPlace.length !== 0) {
+          this.shipsToPlace.forEach((ship, i, toPlaceArray) => {
+            if (ship.length == this.selectedShip.length) {
+              this.gameBoard.placeShip(
+                clickedCellLocationInt[0],
+                clickedCellLocationInt[1],
+                this.selectedShip,
+                this.gameBoard.board
+              );
+              toPlaceArray.splice(i, 1);
+              this.generateArsenal();
+            }
+            this.displayBoardUI();
+            this.cancelLocationRequest();
+          });
+        } else {
+          this.startGame();
+        }
       } else {
         throw new Error("Cannot Place YOUR SHIP HERE!!!");
       }
