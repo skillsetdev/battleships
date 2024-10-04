@@ -16,6 +16,16 @@ body {
   opacity: 0.9;
   position: relative;
 }
+#enemy-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  background-image: url(./assets/92169725-aerial-view-of-sea-surface.jpg);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  opacity: 0.9;
+  position: relative;
+}
 #arsenal img {
   padding: 0px 0px;
 }

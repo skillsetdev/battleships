@@ -160,21 +160,127 @@ export class Player {
   selectedShip = null;
   constructor() {
     this.gameBoard = new Gameboard();
+    this.enemyBoard = new Gameboard();
   }
-  startGame() {} //activated when all the ships are placed
-  /*initializeGame() {
+  startGame() {
+    this.generateEnemyShips();
+    this.displayEnemyBoardUI();
+  } //activated when all the ships are placed
+  generateEnemyShips() {
+    console.log("hui");
     for (let i = 2; i <= 6; i++) {
-      const orientation = true; //add orientation callback
-
-      let newShip = new Ship(i, orientation);
-
-      console.log(newShip.length);
-      const position = this.requireShipLocation(newShip);
-      const row = position[0];
-      const col = position[1];
-      this.gameBoard = this.gameBoard.placeShip(row, col, newShip, gameBoard);
+      let enemyShip = new Ship(i, this.generateRandomOrientation());
+      let randomLocation = this.generateRandomPosition();
+      while (
+        !this.enemyBoard.checkFullShipPlacementValidity(
+          randomLocation[0],
+          randomLocation[1],
+          this.enemyBoard,
+          enemyShip
+        )
+      ) {
+        randomLocation = this.generateRandomPosition();
+      }
+      this.enemyBoard.placeShip(
+        randomLocation[0],
+        randomLocation[1],
+        enemyShip,
+        this.enemyBoard.board
+      );
     }
-  }*/
+  }
+  generateRandomOrientation() {
+    const randomValue = Math.random();
+    if (randomValue > 0.5) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  generateRandomPosition() {
+    const randomRow = Math.floor(Math.random() * 10);
+    const randomCol = Math.floor(Math.random() * 10);
+    return [randomRow, randomCol];
+  }
+  displayEnemyBoardUI() {
+    const table = document.querySelector("#board");
+    const colnums = document.querySelector("#col-nums");
+    const rownums = document.querySelector("#row-nums");
+    const enemyTable = document.querySelector("#enemy-board");
+    table.style.height = "min(50vw, 50vh)";
+    table.style.width = "min(50vw, 50vh)";
+    colnums.innerHTML = "";
+    rownums.innerHTML = "";
+    enemyTable.style.height = "min(50vw, 50vh)";
+    enemyTable.style.width = "min(50vw, 50vh)";
+    enemyTable.innerHTML = "";
+    this.enemyBoard.board.forEach((value, i, enemyBoard) => {
+      enemyBoard[i].forEach((value, j) => {
+        let cell = document.createElement("div");
+        cell.className = "cell";
+        cell.id = `${i},${j},e`;
+        cell.addEventListener("click", (e) => {
+          this.attack(e);
+        });
+        this.enemyBoard.ships.forEach((ship) => {
+          if (ship.coordinates.includes(`${i},${j}`)) {
+            cell.style.backgroundColor = "rgb(66, 111, 113)";
+            if (ship.coordinates[0] == `${i},${j}` && !ship.isHorizontal) {
+              cell.style.borderTopLeftRadius = "50% 100%";
+              cell.style.borderTopRightRadius = "50% 100%";
+            }
+            if (
+              ship.coordinates[ship.length - 1] == `${i},${j}` &&
+              !ship.isHorizontal
+            ) {
+              cell.style.borderBottomLeftRadius = "25%";
+              cell.style.borderBottomRightRadius = "25%";
+            }
+            if (ship.coordinates[0] == `${i},${j}` && ship.isHorizontal) {
+              cell.style.borderTopLeftRadius = "25%";
+              cell.style.borderBottomLeftRadius = "25%";
+            }
+            if (
+              ship.coordinates[ship.length - 1] == `${i},${j}` &&
+              ship.isHorizontal
+            ) {
+              cell.style.borderTopRightRadius = "100% 50%";
+              cell.style.borderBottomRightRadius = "100% 50%";
+            }
+          }
+        });
+        enemyTable.appendChild(cell);
+      });
+    });
+    if (
+      this.enemyBoard.ships.length === 0 &&
+      this.enemyBoard.sunkShips.length === 0
+    ) {
+      return;
+    }
+    if (
+      this.enemyBoard.ships.length === 0 &&
+      this.enemyBoard.sunkShips.length !== 0
+    ) {
+      // all ships are sunk
+    }
+    if (this.enemyBoard.ships.length !== 0) {
+      // display ships and sunk ships
+    }
+  }
+  attack(event) {
+    const cell = event.target;
+    const id = event.target.id.split(",");
+    for (let i = 0; i < this.enemyBoard.ships.length; i++) {
+      let ship = this.enemyBoard.ships[i];
+      if (ship.coordinates.includes(`${id[0]},${id[1]}`)) {
+        cell.style.backgroundColor = "red";
+        break;
+      } else {
+        cell.style.backgroundColor = "blue";
+      }
+    }
+  }
   generateArsenal() {
     const arsenalBox = document.querySelector("#arsenal");
     let arsenalImages = [
@@ -219,7 +325,7 @@ export class Player {
         shipBox.className = "ship-box";
         let turnIcon = document.createElement("img");
         turnIcon.src =
-          "./assets/rotate_right_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg";
+          "./assets/rotate_left_24dp_000000_FILL0_wght400_GRAD0_opsz24.svg";
         let imageBox = document.createElement("img");
         if (ship.isHorizontal) {
           imageBox.id = `${ship.length}-h`;
@@ -256,7 +362,6 @@ export class Player {
     }
   }
   selectShip(event) {
-    const arsenalBox = document.querySelector("#arsenal");
     if (this.selectedShip !== null) {
       const shipBoxes = document.querySelectorAll(".ship-box");
       shipBoxes.forEach((shipBox) => {
@@ -297,7 +402,7 @@ export class Player {
         let cell = document.createElement("div");
         cell.className = "cell";
         cell.id = `${i},${j}`;
-        table.appendChild(cell);
+
         this.gameBoard.ships.forEach((ship) => {
           if (ship.coordinates.includes(`${i},${j}`)) {
             cell.style.backgroundColor = "rgb(66, 111, 113)";
@@ -325,6 +430,7 @@ export class Player {
             }
           }
         });
+        table.appendChild(cell);
       });
     });
     if (
@@ -436,7 +542,8 @@ export class Player {
             this.displayBoardUI();
             this.cancelLocationRequest();
           });
-        } else {
+        }
+        if (this.shipsToPlace.length === 0) {
           this.startGame();
         }
       } else {
