@@ -11,6 +11,7 @@ export class Ship {
   }
   isSunk() {
     this.isUnderWater = this.timesHit >= this.length;
+    return this.isUnderWater;
   }
 }
 export class Gameboard {
@@ -158,6 +159,7 @@ export class Gameboard {
 export class Player {
   shipsToPlace = null;
   selectedShip = null;
+  isYourTurn = true;
   constructor() {
     this.gameBoard = new Gameboard();
     this.enemyBoard = new Gameboard();
@@ -167,7 +169,6 @@ export class Player {
     this.displayEnemyBoardUI();
   } //activated when all the ships are placed
   generateEnemyShips() {
-    console.log("hui");
     for (let i = 2; i <= 6; i++) {
       let enemyShip = new Ship(i, this.generateRandomOrientation());
       let randomLocation = this.generateRandomPosition();
@@ -269,16 +270,50 @@ export class Player {
     }
   }
   attack(event) {
-    const cell = event.target;
-    const id = event.target.id.split(",");
-    for (let i = 0; i < this.enemyBoard.ships.length; i++) {
-      let ship = this.enemyBoard.ships[i];
-      if (ship.coordinates.includes(`${id[0]},${id[1]}`)) {
-        cell.style.backgroundColor = "red";
-        break;
-      } else {
-        cell.style.backgroundColor = "blue";
+    if (this.isYourTurn) {
+      const cell = event.target;
+      const id = event.target.id.split(",");
+      for (let i = 0; i < this.enemyBoard.ships.length; i++) {
+        let ship = this.enemyBoard.ships[i];
+        if (ship.coordinates.includes(`${id[0]},${id[1]}`)) {
+          cell.innerHTML = "";
+          let explosionImg = document.createElement("img");
+          explosionImg.src =
+            "./assets/360_F_68741957_Bv0amMRCjorX3rTXdStKM0wbdKuaDe3F.jpg";
+          explosionImg.style.width = "100%";
+          explosionImg.style.height = "100%";
+          cell.appendChild(explosionImg);
+          ship.hit();
+          if (ship.isSunk()) {
+            console.log("sunk");
+            ship.coordinates.forEach((coordinate) => {
+              let rowCol = coordinate.split(",");
+              let cell = document.getElementById(`${rowCol[0]},${rowCol[1]},e`);
+              cell.firstChild.src = "./assets/fireball-422746_1280.webp";
+            });
+            this.enemyBoard.sunkShips.push(ship);
+            if (this.enemyBoard.sunkShips.length >= 5) {
+              console.log("YOU WON!!!");
+            }
+          }
+          break;
+        } else {
+          cell.innerHTML = "";
+          let splashImg = document.createElement("img");
+          splashImg.src = "./assets/istockphoto-1129413102-612x612.jpg";
+          splashImg.style.width = "100%";
+          splashImg.style.height = "100%";
+          cell.appendChild(splashImg);
+        }
       }
+      //this.isYourTurn = false;
+      this.enemyAttack();
+    }
+  }
+  enemyAttack() {
+    if (!this.isYourTurn) {
+      let attackPosition = this.generateRandomPosition(); //[row, col]
+      setTimeout(() => {}, 2000);
     }
   }
   generateArsenal() {
