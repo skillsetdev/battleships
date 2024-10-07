@@ -61,7 +61,6 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 0px 20px;
 }
 .row {
   display: flex;
@@ -73,4 +72,19 @@ body {
   min-height: 20px;
   min-width: 20px;
   border: 1px solid white;
+}
+#arsenal-text {
+  animation: blinker 1.5s linear infinite;
+  padding: 0;
+  margin: 0;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+h2 {
+  padding: 0;
+  margin: 0;
 }
