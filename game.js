@@ -17,7 +17,8 @@ export class Ship {
 export class Gameboard {
   ships = [];
   sunkShips = [];
-  missedShots = [];
+  recievedMisses = [];
+  recievedHits = [];
   constructor(size = 10) {
     this.size = size;
     this.board = this.initializeBoard(this.size);
@@ -44,6 +45,9 @@ export class Gameboard {
         board[i][j] = null;
       }
     }
+  }
+  checkCellExistanceOnTenXTenBoard(row, col) {
+    return row >= 0 && row <= 9 && col >= 0 && col <= 9;
   }
   checkPlacementValidity(row, col, board) {
     if (row >= board.length) {
@@ -160,7 +164,7 @@ export class Player {
   shipsToPlace = null;
   selectedShip = null;
   isYourTurn = true;
-  nextPreferrableEnemyAttackPosition = null; //change to saving last hit position
+  lastEnemyHitPosition = null;
   constructor() {
     this.gameBoard = new Gameboard();
     this.enemyBoard = new Gameboard();
@@ -231,7 +235,9 @@ export class Player {
         cell.addEventListener("click", (e) => {
           this.attack(e);
         });
-        this.enemyBoard.ships.forEach((ship) => {
+        cell.style.backgroundColor = "black";
+        //visible enemy ships
+        /*this.enemyBoard.ships.forEach((ship) => {
           if (ship.coordinates.includes(`${i},${j}`)) {
             cell.style.backgroundColor = "rgb(66, 111, 113)";
             if (ship.coordinates[0] == `${i},${j}` && !ship.isHorizontal) {
@@ -257,7 +263,7 @@ export class Player {
               cell.style.borderBottomRightRadius = "100% 50%";
             }
           }
-        });
+        });*/
         enemyTable.appendChild(cell);
       });
     });
@@ -279,6 +285,7 @@ export class Player {
   }
   attack(event) {
     const enemyText = document.querySelector("#enemy-text");
+    const myText = document.querySelector("#my-text");
     if (this.isYourTurn) {
       const cell = event.target;
       const id = event.target.id.split(",");
@@ -294,6 +301,7 @@ export class Player {
           cell.appendChild(explosionImg);
           ship.hit();
           enemyText.innerHTML = "Enemy's Ship is hit!";
+          this.enemyBoard.recievedHits.push(`${id[0]},${id[1]}`);
           if (ship.isSunk()) {
             enemyText.innerHTML = "Enemy's Ship is sunk!!!";
             console.log("sunk");
@@ -306,12 +314,15 @@ export class Player {
             });
             this.enemyBoard.sunkShips.push(ship);
             if (this.enemyBoard.sunkShips.length >= 5) {
-              console.log("YOU WON!!!");
+              myText.innerHTML = "You WON!!!";
+              myText.style.color = "green";
+              enemyText.innerHTML = "Reload the page to play again";
+              enemyText.style.color = "black";
             }
           }
           break;
         } else {
-          this.enemyBoard.missedShots.push(`${id[0]},${id[1]}`);
+          this.enemyBoard.recievedMisses.push(`${id[0]},${id[1]}`);
           cell.innerHTML = "";
           let splashImg = document.createElement("img");
           splashImg.src = "./assets/istockphoto-1129413102-612x612.jpg";
@@ -326,7 +337,7 @@ export class Player {
       this.isYourTurn = false;
       setTimeout(() => {
         this.enemyAttack();
-      }, 2000);
+      }, 7);
     }
   }
   enemyAttack() {
@@ -338,14 +349,106 @@ export class Player {
       setTimeout(() => {
         let attackPosition = this.generateRandomPosition();
         while (
-          this.gameBoard.missedShots.includes(
+          this.gameBoard.recievedHits.includes(
+            `${attackPosition[0]},${attackPosition[1]}`
+          ) ||
+          this.gameBoard.recievedMisses.includes(
             `${attackPosition[0]},${attackPosition[1]}`
           )
         ) {
           attackPosition = this.generateRandomPosition(); //[row, col]
         }
-        if (this.nextPreferrableEnemyAttackPosition !== null) {
-          attackPosition = this.nextPreferrableEnemyAttackPosition;
+        if (this.lastEnemyHitPosition !== null) {
+          const adjacentDirections = [
+            [1, 0],
+            [0, 1],
+            [-1, 0],
+            [0, -1],
+          ];
+          let newAdjacentPosition = [...attackPosition]; // fallback
+          for (let i = 0; i < adjacentDirections.length; i++) {
+            const row = adjacentDirections[i][0] + this.lastEnemyHitPosition[0];
+            const col = adjacentDirections[i][1] + this.lastEnemyHitPosition[1];
+            if (
+              !this.gameBoard.recievedMisses.includes(`${row},${col}`) &&
+              this.gameBoard.checkCellExistanceOnTenXTenBoard(row, col)
+            ) {
+              console.log("correct placement");
+              newAdjacentPosition = [row, col];
+            }
+            if (this.gameBoard.recievedHits.includes(`${row},${col}`)) {
+              //if the position before the last is hit and the ship is not sunk, then the next one is likely to also be part of the ship
+              let oppositeDirection = [
+                adjacentDirections[i][0] * -1,
+                adjacentDirections[i][1] * -1,
+              ];
+              let oppositeRow =
+                oppositeDirection[0] + this.lastEnemyHitPosition[0];
+              let oppositeCol =
+                oppositeDirection[1] + this.lastEnemyHitPosition[1];
+              let oppositePosition = [oppositeRow, oppositeCol];
+              ////////////////
+              if (
+                this.gameBoard.recievedMisses.includes(
+                  `${oppositeRow},${oppositeCol}`
+                )
+              ) {
+                console.log("new rule");
+
+                let currentSkipPosition = [row, col];
+                while (
+                  this.gameBoard.recievedHits.includes(
+                    `${currentSkipPosition[0]},${currentSkipPosition[1]}`
+                  ) &&
+                  this.gameBoard.checkCellExistanceOnTenXTenBoard(
+                    currentSkipPosition[0] + adjacentDirections[i][0],
+                    currentSkipPosition[1] + adjacentDirections[i][1]
+                  )
+                ) {
+                  currentSkipPosition = [
+                    currentSkipPosition[0] + adjacentDirections[i][0],
+                    currentSkipPosition[1] + adjacentDirections[i][1],
+                  ];
+                }
+                if (
+                  !this.gameBoard.recievedMisses.includes(
+                    `${currentSkipPosition[0]},${currentSkipPosition[1]}`
+                  )
+                ) {
+                  newAdjacentPosition = [
+                    currentSkipPosition[0],
+                    currentSkipPosition[1],
+                  ];
+                  console.log(
+                    `new position: ${currentSkipPosition[0]},${currentSkipPosition[1]}`
+                  );
+                  break;
+                }
+              }
+
+              //// Gets stuck after the last hit if it hits the ship not from the end////
+              //// Add abity to turn the direction of hits around if it meets the miss after the last cell when the ship is not sunk////
+              //// when next position is in missed and the opposite and current positions are in hits ////
+
+              if (
+                !this.gameBoard.recievedMisses.includes(
+                  `${oppositeRow},${oppositeCol}`
+                ) ||
+                !this.gameBoard.recievedHits.includes(
+                  `${oppositeRow},${oppositeCol}`
+                )
+              ) {
+                newAdjacentPosition = [oppositeRow, oppositeCol];
+                break;
+              } else {
+                console.log("no repeat");
+              }
+            }
+          }
+          attackPosition = newAdjacentPosition;
+          console.log("recieved misses:");
+          console.log(this.gameBoard.recievedMisses);
+          console.log(`planning to hit on ${attackPosition}`);
         }
         let cell = document.getElementById(
           `${attackPosition[0]},${attackPosition[1]}`
@@ -366,8 +469,26 @@ export class Player {
             cell.appendChild(explosionImg);
             ship.hit();
             myText.innerHTML = "Your Ship is hit!";
+            this.gameBoard.recievedHits.push(
+              `${attackPosition[0]},${attackPosition[1]}`
+            );
+            const diagonalDirections = [
+              [1, -1],
+              [1, 1],
+              [-1, -1],
+              [-1, 1],
+            ];
+            for (let i = 0; i < diagonalDirections.length; i++) {
+              const diagRow = attackPosition[0] + diagonalDirections[i][0];
+              const diagCol = attackPosition[1] + diagonalDirections[i][1];
+              const diagPosString = `${diagRow},${diagCol}`;
+              this.gameBoard.recievedMisses.push(
+                diagPosString //exclude positions diagonal to a hit positions, since there cannot be any ship according to the rules
+              );
+            }
+            this.lastEnemyHitPosition = [...attackPosition];
             if (ship.isSunk()) {
-              this.nextPreferrableEnemyAttackPosition = null;
+              this.lastEnemyHitPosition = null;
               myText.innerHTML = "Your Ship is sunk!!!";
               console.log("sunk");
               ship.coordinates.forEach((coordinate) => {
@@ -379,14 +500,20 @@ export class Player {
               });
               this.gameBoard.sunkShips.push(ship);
               if (this.gameBoard.sunkShips.length >= 5) {
-                console.log("YOU LOST!!!");
+                myText.innerHTML = "You LOST!!!";
+                myText.style.color = "red";
+                enemyText.innerHTML = "Reload the page to play again";
+                enemyText.style.color = "black";
               }
             }
             break;
           } else {
-            this.gameBoard.missedShots.push(
-              `${attackPosition[0]},${attackPosition[1]}`
-            );
+            if (i == this.gameBoard.ships.length - 1) {
+              this.gameBoard.recievedMisses.push(
+                `${attackPosition[0]},${attackPosition[1]}`
+              );
+              console.log(`miss recieved at ${attackPosition}`);
+            }
             cell.innerHTML = "";
             let splashImg = document.createElement("img");
             splashImg.src = "./assets/istockphoto-1129413102-612x612.jpg";
@@ -401,9 +528,8 @@ export class Player {
           myText.innerHTML = "Your Board";
           enemyText.style.color = "black";
           enemyText.innerHTML = "Your turn, hit him!";
-          this.attack();
-        }, 2000);
-      }, 2000);
+        }, 7);
+      }, 7);
     }
   }
   generateArsenal() {
